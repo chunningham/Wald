@@ -57,7 +57,15 @@ entries: [
                     validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
                         Ok(())
                     }
-                )
+                ),
+                // from!(
+                //     "Parent",
+                //     tag: "parents",
+                //     validation_package: || hdk::ValidationPackageDefinition::Entry,
+                //     validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+                //         Ok(())
+                //     }
+                // )
             ]
         ),
         entry!(
@@ -65,6 +73,7 @@ entries: [
             description: "A vote on a comment",
             sharing: Sharing::Public,
             native_type: Vote,
+            // TODO validate so each person can only vote once, changing votes is possible though
             validation_package: || hdk::ValidationPackageDefinition::Entry,
             validation: |list_item: ListItem, _ctx: hdk::ValidationData| {
                 Ok(())
@@ -75,4 +84,27 @@ entries: [
     genesis: || { Ok(()) }
 
     functions: {}
+}
+
+fn handle_create_root(root: Comment) -> JsonString {
+    let root_entry = Entry::new(EntryType::App("comment".into()), root);
+	match hdk::commit_entry(&root_entry) {
+		Ok(address) => json!({"success": true, "address": address}).into(),
+		Err(hdk_err) => hdk_err.into()
+	}
+}
+
+fn handle_create_reply(parent_addr: Address, reply: Comment) -> JsonString {
+    let reply_entry = Entry::new(EntryType::App("comment".into()), reply);
+
+    match hdk::commit_entry(&reply_entry)
+            .and_then(|reply_addr| {
+                hdk::link_entries(&parent_addr, &reply_addr, "replies")
+            })
+        {
+            Ok(_) => {
+                json!({"success": true}).into()
+            },
+            Err(hdk_err) => hdk_err.into()
+        }
 }
