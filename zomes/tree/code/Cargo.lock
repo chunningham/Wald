@@ -492,6 +492,7 @@ name = "tree"
 version = "0.1.0"
 dependencies = [
  "hdk 0.0.2 (git+https://github.com/holochain/holochain-rust)",
+ "holochain_core_types_derive 0.0.2 (git+https://github.com/holochain/holochain-rust)",
  "holochain_wasm_utils 0.0.2 (git+https://github.com/holochain/holochain-rust)",
  "serde 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
