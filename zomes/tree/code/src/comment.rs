@@ -11,7 +11,6 @@ use hdk::holochain_core_types::{
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
 struct Comment {
     content: String,
-    committer: String,
     timestamp: u64,
 }
 
@@ -26,22 +25,54 @@ pub fn definition() -> ValidatingEntryType {
             Ok(())
         },
         links: [
-            to!(
-                "Vote",
-                tag: "votes",
-                validation_package: || hdk::ValidationPackageDefinition::Entry,
-                validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
-                    Ok(())
-                }
-            ),
-            to!(
-                "Reply",
-                tag: "replies",
-                validation_package: || hdk::ValidationPackageDefinition::Entry,
-                validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
-                    Ok(())
-                }
-            )
+            comment_vote_link(),
+            comment_reply_link(),
+            comment_author_link(),
+            author_submissions_link()
         ]
     )
-} 
+}
+
+pub fn comment_vote_link() -> ValidatingLinkDefinition {
+    to!(
+        "Vote",
+        tag: "votes",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}
+
+pub fn comment_reply_link() -> ValidatingLinkDefinition {
+    to!(
+        "Reply",
+        tag: "replies",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}
+
+pub fn comment_author_link() -> ValidatingLinkDefinition {
+    to!(
+        "Author",
+        tag: "author",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}
+
+pub fn author_submissions_link() -> ValidatingLinkDefinition {
+    from!(
+        "Submissions",
+        tag: "submissions",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}

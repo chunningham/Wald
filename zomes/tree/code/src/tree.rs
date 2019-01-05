@@ -26,30 +26,14 @@ pub fn root_definition() -> ValidatingEntryType {
             Ok(())
         },
         links: [
-            to!(
-                "Vote",
-                tag: "votes",
-                validation_package: || hdk::ValidationPackageDefinition::Entry,
-                validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
-                    Ok(())
-                }
-            ),
-            to!(
-                "Reply",
-                tag: "replies",
-                validation_package: || hdk::ValidationPackageDefinition::Entry,
-                validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
-                    Ok(())
-                }
-            )
+            comment::comment_vote_link(),
+            comment::comment_reply_link(),
+            comment::comment_author_link(),
+            comment::author_submissions_link()
         ]
     )
 }
 
-
-// roots will have no visible parents. is an invisible "true root" necessary for finding the visible roots?
-// something with a very simple entry that the address can be easily found?
-// nah a query can be run for the "root" entries :)
 pub fn create_root(root: Comment) -> ZomeApiResult<Address> {
     // create root entry
     let root_entry = Entry::new(EntryType::App("root".into()), root);
@@ -70,7 +54,9 @@ pub fn create_reply(parent_addr: Address, reply: Comment) -> ZomeApiResult<Addre
     // commit entry and link on success
     return hdk::commit_entry(&reply_entry)
             .and_then(|reply_addr| {
-                hdk::link_entries(&parent_addr, &reply_addr, "replies")
+                hdk::link_entries(&parent_addr, &reply_addr, "replies");
+                hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "author");
+                hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "submissions");
             })
 }
 
@@ -80,6 +66,18 @@ pub fn get_reply_addresses(parent_addr: Address) -> ZomeApiResult<GetLinksResult
 
 pub fn get_comment(comment_addr: Address) -> ZomeApiResult<Option<Entry>> {
     return hdk::get_entry(&comment_addr)
+}
+
+pub fn get_comment_author(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&comment_addr, "author")
+}
+
+pub fn get_my_submissions() -> ZomeApiResult<GetLinksResult> {
+    return get_agent_submissions(&AGENT_ADDRESS)
+}
+
+pub fn get_agent_submissions(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(agent_addr, "submissions")
 }
 
 pub fn apply_vote(target_comment_addr: Address, vote: Vote) -> ZomeApiResult<Address> {
@@ -93,8 +91,10 @@ pub fn apply_vote(target_comment_addr: Address, vote: Vote) -> ZomeApiResult<Add
             })
 }
 
-pub fn get_vote_addresses(comment: Address) -> ZomeApiResult<GetLinksResult> {
+pub fn get_vote_addresses(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
     return hdk::get_links(&comment, "votes")
 }
 
-pub fn get_vote()
+pub fn get_vote(vote_addr: Address) -> ZomeApiResult<Option<Entry>> {
+    return hdk::get_entry(&vote_addr)
+}

@@ -18,6 +18,9 @@ struct Vote {
     timestamp: u64,
 }
 
+// TODO could vote entries be replaced by up/down links to agent addrs? are links unique?
+
+
 pub fn definition() -> ValidatingEntryType {
     entry!(
         name: "vote",
