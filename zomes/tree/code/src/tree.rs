@@ -47,14 +47,14 @@ pub fn get_roots() -> ZomeApiResult<Vec<Address>> {
     return hdk::query("root".into(), 0, 0)
 }
 
-pub fn create_reply(parent_addr: Address, reply: Comment) -> ZomeApiResult<Address> {
+pub fn create_reply(parent_addrs: Vec<Address>, reply: Comment) -> ZomeApiResult<Address> {
     // create reply entry
     let reply_entry = Entry::new(EntryType::App("comment".into()), reply);
 
     // commit entry and link on success
     return hdk::commit_entry(&reply_entry)
             .and_then(|reply_addr| {
-                hdk::link_entries(&parent_addr, &reply_addr, "replies");
+                parent_addrs.iter().map(|parent_addr| hdk::link_entries(&parent_addr, &reply_addr, "replies")).collect();
                 hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "author");
                 hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "submissions");
             })
