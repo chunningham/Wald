@@ -1,37 +1,87 @@
 
 use boolinator::Boolinator;
-use hdk::entry_definition::ValidatingEntryType;
-/// This file holds everything that represents the "post" entry type.
-use hdk::holochain_core_types::{
-    cas::content::Address, dna::entry_types::Sharing, error::HolochainError, json::JsonString,
+use hdk::{
+    self,
+    error::ZomeApiResult,
+    holochain_core_types::{
+        cas::content::Address,
+        entry::Entry,
+        error::HolochainError,
+        json::JsonString,
+    },
+    holochain_wasm_utils::api_serialization::{
+        get_entry::GetEntryOptions, get_links::GetLinksResult,
+    },
+    AGENT_ADDRESS,
 };
 
-// each vote is just a simple bool (true == upvote, false == downvote), changing a vote probably requires an update or delete/commit cycle
-// afaik, updating an entry leave it and appends a pointer to the updated entry which the DHT retrieves
-// deleting I think appends a notice telling everyone's local HT to just ignore it (or even to drop it from the table?)
-// imo, deleting is a better option for managing DHT size, even if votes are small, 10k of them could still be a few Mbs
-// TODO as with the comment/actor thing
-#[derive(Serialize, Deserialize, Debug, DefaultJson)]
-struct Vote {
-    value: bool,
-    voter: String,
-    timestamp: u64,
+pub fn get_upvotes(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&comment_addr, "upvotes")
 }
 
-// TODO could vote entries be replaced by up/down links to agent addrs? are links unique?
-// not until links can be deleted or unlinked, so keep this for now
+pub fn get_downvotes(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&comment_addr, "downvotes")
+}
 
+pub fn get_upvoted_comments(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&agent_addr, "upvoted")
+}
 
-pub fn definition() -> ValidatingEntryType {
-    entry!(
-        name: "vote",
-        description: "A vote up or down",
-        sharing: Sharing::Public,
-        native_type: Vote,
-        // TODO validate so each person can only vote once, changing votes is possible though
-        // we'd have to have that validation done during linking, not committing? or in the handling function?
+pub fn get_downvoted_comments(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&agent_addr, "downvoted")
+}
+
+pub fn apply_vote(comment_addr: Address, vote: bool) -> Result<(), ZomeApiError> {
+    // making this real explicit
+    if (vote == true) {
+        hdk::link_entries(&AGENT_ADDRESS, &comment_addr, "upvoted");
+        return hdk::link_entries(&comment_addr, &AGENT_ADDRESS, "upvotes")
+    } else {
+        hdk::link_entries(&AGENT_ADDRESS, &comment_addr, "downvoted");
+        return hdk::link_entries(&comment_addr, &AGENT_ADDRESS, "downvotes")
+    }
+}
+
+// votes are immutable until links can be unmade lmao, fight me
+pub fn comment_upvote_link() -> ValidatingLinkDefinition {
+    to!(
+        "Upvote",
+        tag: "upvotes",
         validation_package: || hdk::ValidationPackageDefinition::Entry,
-        validation: |vote: Vote, _ctx: hdk::ValidationData| {
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}
+
+pub fn comment_downvote_link() -> ValidatingLinkDefinition {
+    to!(
+        "Downvote",
+        tag: "downvotes",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}
+
+pub fn agent_upvoted_link() -> ValidatingLinkDefinition {
+    from!(
+        "Upvoted",
+        tag: "upvoted",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
+            Ok(())
+        }
+    )
+}
+
+pub fn agent_downvoted_link() -> ValidatingLinkDefinition {
+    from!(
+        "Downvoted",
+        tag: "downvoted",
+        validation_package: || hdk::ValidationPackageDefinition::Entry,
+        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
             Ok(())
         }
     )

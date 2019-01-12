@@ -11,8 +11,8 @@ extern crate serde_json;
 #[macro_use]
 extern crate holochain_core_types_derive;
 
-pub mod vote;
 pub mod comment;
+pub mod vote;
 pub mod tree;
 
 // use hdk::holochain_core_types::{

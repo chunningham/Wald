@@ -14,6 +14,7 @@ use hdk::{
     },
     AGENT_ADDRESS,
 };
+pub mod vote;
 
 // each comment is content and a timestamp
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
@@ -33,10 +34,13 @@ pub fn definition() -> ValidatingEntryType {
             Ok(())
         },
         links: [
-            comment_vote_link(),
             comment_reply_link(),
             comment_author_link(),
-            author_submissions_link()
+            author_submissions_link(),
+            vote::comment_upvote_link(),
+            vote::comment_downvote_link(),
+            vote::agent_upvoted_link(),
+            vote::agent_downvoted_link()
         ]
     )
 }
@@ -72,17 +76,6 @@ pub fn create_reply(parent_addrs: Vec<Address>, reply: Comment) -> ZomeApiResult
 
 pub fn get_replies(parent_addr: Address) -> ZomeApiResult<GetLinksResult> {
     return hdk::get_links(&parent_addr, "replies")
-}
-
-pub fn comment_vote_link() -> ValidatingLinkDefinition {
-    to!(
-        "Vote",
-        tag: "votes",
-        validation_package: || hdk::ValidationPackageDefinition::Entry,
-        validation: |base: Address, target: Address, _ctx: hdk::ValidationData| {
-            Ok(())
-        }
-    )
 }
 
 pub fn comment_reply_link() -> ValidatingLinkDefinition {
