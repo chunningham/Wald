@@ -47,39 +47,6 @@ pub fn get_roots() -> ZomeApiResult<Vec<Address>> {
     return hdk::query("root".into(), 0, 0)
 }
 
-pub fn create_reply(parent_addrs: Vec<Address>, reply: Comment) -> ZomeApiResult<Address> {
-    // create reply entry
-    let reply_entry = Entry::new(EntryType::App("comment".into()), reply);
-
-    // commit entry and link on success
-    return hdk::commit_entry(&reply_entry)
-            .and_then(|reply_addr| {
-                parent_addrs.iter().map(|parent_addr| hdk::link_entries(&parent_addr, &reply_addr, "replies")).collect();
-                hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "author");
-                hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "submissions");
-            })
-}
-
-pub fn get_reply_addresses(parent_addr: Address) -> ZomeApiResult<GetLinksResult> {
-    return hdk::get_links(&parent_addr, "replies")
-}
-
-pub fn get_comment(comment_addr: Address) -> ZomeApiResult<Option<Entry>> {
-    return hdk::get_entry(&comment_addr)
-}
-
-pub fn get_comment_author(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
-    return hdk::get_links(&comment_addr, "author")
-}
-
-pub fn get_my_submissions() -> ZomeApiResult<GetLinksResult> {
-    return get_agent_submissions(&AGENT_ADDRESS)
-}
-
-pub fn get_agent_submissions(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
-    return hdk::get_links(agent_addr, "submissions")
-}
-
 pub fn apply_vote(target_comment_addr: Address, vote: Vote) -> ZomeApiResult<Address> {
     // create vote entry
     let vote_entry = Entry::new(EntryType::App("vote".into()), vote);

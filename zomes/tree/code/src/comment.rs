@@ -1,13 +1,21 @@
 
 use boolinator::Boolinator;
-use hdk::entry_definition::ValidatingEntryType;
-/// This file holds everything that represents the "post" entry type.
-use hdk::holochain_core_types::{
-    cas::content::Address, dna::entry_types::Sharing, error::HolochainError, json::JsonString,
+use hdk::{
+    self,
+    error::ZomeApiResult,
+    holochain_core_types::{
+        cas::content::Address,
+        entry::Entry,
+        error::HolochainError,
+        json::JsonString,
+    },
+    holochain_wasm_utils::api_serialization::{
+        get_entry::GetEntryOptions, get_links::GetLinksResult,
+    },
+    AGENT_ADDRESS,
 };
 
-// each comment is content and a commiting actor
-// TODO figure out if the commiting actor can be discovered without storing it in the entry
+// each comment is content and a timestamp
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
 struct Comment {
     content: String,
@@ -31,6 +39,39 @@ pub fn definition() -> ValidatingEntryType {
             author_submissions_link()
         ]
     )
+}
+
+pub fn get_comment(comment_addr: Address) -> ZomeApiResult<Option<Entry>> {
+    return hdk::get_entry(&comment_addr)
+}
+
+pub fn get_comment_author(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&comment_addr, "author")
+}
+
+pub fn get_my_submissions() -> ZomeApiResult<GetLinksResult> {
+    return get_agent_submissions(&AGENT_ADDRESS)
+}
+
+pub fn get_agent_submissions(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(agent_addr, "submissions")
+}
+
+pub fn create_reply(parent_addrs: Vec<Address>, reply: Comment) -> ZomeApiResult<Address> {
+    // create reply entry
+    let reply_entry = Entry::new(EntryType::App("comment".into()), reply);
+
+    // commit entry and link on success
+    return hdk::commit_entry(&reply_entry)
+            .and_then(|reply_addr| {
+                parent_addrs.iter().for_each(|parent_addr| hdk::link_entries(&parent_addr, &reply_addr, "replies"));
+                hdk::link_entries(&reply_addr, &AGENT_ADDRESS, "author");
+                hdk::link_entries(&AGENT_ADDRESS, &reply_addr, "submissions");
+            })
+}
+
+pub fn get_replies(parent_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&parent_addr, "replies")
 }
 
 pub fn comment_vote_link() -> ValidatingLinkDefinition {

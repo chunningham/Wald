@@ -43,30 +43,40 @@ entries: [
 
     functions: {
         main (Public) {
+            read_comment: {
+                inputs: |addr: Address|,
+                outputs: |results: ZomeApiResult<Option<Entry>>|,
+                handler: comment::get_comment
+            }
             create_root: {
                 inputs: |root: Comment|,
-                outputs: |result: JsonString|,
-                handler: tree::handle_create_root
+                outputs: |result: ZomeApiResult<Address>|,
+                handler: tree::create_root
             }
             get_roots: {
                 inputs: | |,
                 outputs: |results: ZomeApiResult<Vec<Address>>|,
-                handler: tree::handle_get_roots
+                handler: tree::get_roots
             }
             create_reply: {
-                inputs: |parent_addr: Address, reply: Comment|,
-                outputs: |result: JsonString|,
-                handler: tree::handle_create_reply
+                inputs: |parent_addr: Vec<Address>, reply: Comment|,
+                outputs: |result: ZomeApiResult<Address>|,
+                handler: tree::create_reply
             }
             get_replies: {
                 inputs: |parrent_addr: Address|,
-                outputs: |result: JsonString|,
-                handler: tree::handle_get_replies
+                outputs: |result: ZomeApiResult<GetLinksResult>|,
+                handler: tree::get_replies
             }
-            apply_vote: {
-                inputs: |target_comment_addr: Address, vote: Vote|,
-                outputs: |results: JsonString|,
-                handler: tree::handle_apply_vote
+            get_comments_by: {
+                inputs: |agent: Address|,
+                outputs: |results: ZomeApiResult<GetLinksResult>|,
+                handler: comment::get_agent_submissions
+            }
+            get_my_comments: {
+                inputs: | |,
+                outputs: |results: ZomeApiResult<GetLinksResult>|,
+                handler: comment::get_my_submissions
             }
         }
     }

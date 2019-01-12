@@ -19,6 +19,7 @@ struct Vote {
 }
 
 // TODO could vote entries be replaced by up/down links to agent addrs? are links unique?
+// not until links can be deleted or unlinked, so keep this for now
 
 
 pub fn definition() -> ValidatingEntryType {
