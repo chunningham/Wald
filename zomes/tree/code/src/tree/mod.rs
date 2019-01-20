@@ -1,20 +1,21 @@
 use hdk::{
     self,
     error::ZomeApiResult,
+    entry_definition::{
+        ValidatingEntryType,
+    },
     holochain_core_types::{
         cas::content::Address,
-        entry::Entry,
-        error::HolochainError,
-        json::JsonString,
-    },
-    holochain_wasm_utils::api_serialization::{
-        get_entry::GetEntryOptions, get_links::GetLinksResult,
-    },
-    AGENT_ADDRESS,
+        entry::{
+            Entry,
+            entry_type::EntryType,
+        },
+        dna::entry_types::Sharing,
+    }
 };
 
-pub mod vote;
 pub mod comment;
+pub mod vote;
 
 pub fn root_definition() -> ValidatingEntryType {
     entry!(
@@ -38,7 +39,7 @@ pub fn root_definition() -> ValidatingEntryType {
     )
 }
 
-pub fn create_root(root: Comment) -> ZomeApiResult<Address> {
+pub fn create_root(root: comment::Comment) -> ZomeApiResult<Address> {
     // create root entry
     let root_entry = Entry::new(EntryType::App("root".into()), root);
 

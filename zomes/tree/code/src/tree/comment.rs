@@ -1,24 +1,32 @@
 
-use boolinator::Boolinator;
 use hdk::{
     self,
     error::ZomeApiResult,
+    entry_definition::{
+        ValidatingLinkDefinition,
+        ValidatingEntryType,
+    },
     holochain_core_types::{
         cas::content::Address,
-        entry::Entry,
+        entry::{
+            Entry,
+            entry_type::EntryType,
+        },
         error::HolochainError,
         json::JsonString,
+        dna::entry_types::Sharing,
     },
     holochain_wasm_utils::api_serialization::{
-        get_entry::GetEntryOptions, get_links::GetLinksResult,
+        get_links::GetLinksResult,
     },
     AGENT_ADDRESS,
 };
-pub mod vote;
+
+use super::vote;
 
 // each comment is content and a timestamp
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
-struct Comment {
+pub struct Comment {
     content: String,
     timestamp: u64,
 }
@@ -46,19 +54,11 @@ pub fn definition() -> ValidatingEntryType {
 }
 
 pub fn get_comment(comment_addr: Address) -> ZomeApiResult<Option<Entry>> {
-    return hdk::get_entry(&comment_addr)
+    return hdk::get_entry(comment_addr)
 }
 
 pub fn get_comment_author(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
     return hdk::get_links(&comment_addr, "author")
-}
-
-pub fn get_my_submissions() -> ZomeApiResult<GetLinksResult> {
-    return get_agent_submissions(&AGENT_ADDRESS)
-}
-
-pub fn get_agent_submissions(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
-    return hdk::get_links(agent_addr, "submissions")
 }
 
 pub fn create_reply(parent_addrs: Vec<Address>, reply: Comment) -> ZomeApiResult<Address> {
@@ -109,4 +109,12 @@ pub fn author_submissions_link() -> ValidatingLinkDefinition {
             Ok(())
         }
     )
+}
+
+pub fn get_my_submissions() -> ZomeApiResult<GetLinksResult> {
+    return get_agent_submissions(AGENT_ADDRESS)
+}
+
+pub fn get_agent_submissions(agent_addr: Address) -> ZomeApiResult<GetLinksResult> {
+    return hdk::get_links(&agent_addr, "submissions")
 }

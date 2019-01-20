@@ -1,18 +1,18 @@
 
-use boolinator::Boolinator;
 use hdk::{
     self,
-    error::ZomeApiResult,
+    error::{
+        ZomeApiResult,
+        ZomeApiError,
+    },
     holochain_core_types::{
         cas::content::Address,
-        entry::Entry,
-        error::HolochainError,
-        json::JsonString,
     },
     holochain_wasm_utils::api_serialization::{
-        get_entry::GetEntryOptions, get_links::GetLinksResult,
+        get_links::GetLinksResult,
     },
     AGENT_ADDRESS,
+    entry_definition::ValidatingLinkDefinition,
 };
 
 pub fn get_upvotes(comment_addr: Address) -> ZomeApiResult<GetLinksResult> {
@@ -33,7 +33,7 @@ pub fn get_downvoted_comments(agent_addr: Address) -> ZomeApiResult<GetLinksResu
 
 pub fn apply_vote(comment_addr: Address, vote: bool) -> Result<(), ZomeApiError> {
     // making this real explicit
-    if (vote == true) {
+    if vote == true {
         hdk::link_entries(&AGENT_ADDRESS, &comment_addr, "upvoted");
         return hdk::link_entries(&comment_addr, &AGENT_ADDRESS, "upvotes")
     } else {

@@ -1,19 +1,10 @@
-#![feature(try_from)]
-use std::convert::TryFrom;
-
 #[macro_use]
 extern crate hdk;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate serde_json;
-#[macro_use]
 extern crate holochain_core_types_derive;
-
-pub mod comment;
-pub mod vote;
-pub mod tree;
 
 // use hdk::holochain_core_types::{
 //     // hash::HashString,
@@ -28,16 +19,17 @@ pub mod tree;
 
 use hdk::{
     error::ZomeApiResult,
-    holochain_core_types::{cas::content::Address, entry::Entry, json::JsonString, error::HolochainError},
+    holochain_core_types::{cas::content::Address, entry::Entry},
     holochain_wasm_utils::api_serialization::get_links::GetLinksResult,
 };
 
+mod tree;
+
 define_zome! {
-entries: [
-        comment::definition(),
-        vote::definition(),
-        tree::root_definition()
-    ]
+    entries: [
+            tree::comment::definition(),
+            tree::root_definition()
+        ]
 
     genesis: || { Ok(()) }
 
@@ -46,10 +38,10 @@ entries: [
             read_comment: {
                 inputs: |addr: Address|,
                 outputs: |results: ZomeApiResult<Option<Entry>>|,
-                handler: comment::get_comment
+                handler: tree::comment::get_comment
             }
             create_root: {
-                inputs: |root: Comment|,
+                inputs: |root: tree::comment::Comment|,
                 outputs: |result: ZomeApiResult<Address>|,
                 handler: tree::create_root
             }
@@ -59,24 +51,24 @@ entries: [
                 handler: tree::get_roots
             }
             create_reply: {
-                inputs: |parent_addr: Vec<Address>, reply: Comment|,
+                inputs: |parent_addr: Vec<Address>, reply: tree::comment::Comment|,
                 outputs: |result: ZomeApiResult<Address>|,
-                handler: tree::create_reply
+                handler: tree::comment::create_reply
             }
             get_replies: {
                 inputs: |parrent_addr: Address|,
                 outputs: |result: ZomeApiResult<GetLinksResult>|,
-                handler: tree::get_replies
+                handler: tree::comment::get_replies
             }
             get_comments_by: {
                 inputs: |agent: Address|,
                 outputs: |results: ZomeApiResult<GetLinksResult>|,
-                handler: comment::get_agent_submissions
+                handler: tree::comment::get_agent_submissions
             }
             get_my_comments: {
                 inputs: | |,
                 outputs: |results: ZomeApiResult<GetLinksResult>|,
-                handler: comment::get_my_submissions
+                handler: tree::comment::get_my_submissions
             }
         }
     }
